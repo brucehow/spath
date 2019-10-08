@@ -1,0 +1,12 @@
+# Sample datafiles
+*.in
+*.out
+
+# Compiled files
+spath
+
+# Resource files
+examples/
+
+# Mac OS
+*.DS_STORE
