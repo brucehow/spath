@@ -21,7 +21,7 @@ char *get_filename(char *filename) {
     return result;
 }
 
-void output(FILE *fp) {
+void output(FILE *fp, int *spaths, int numV) {
     fprintf(fp, "%d", numV);
     for (int i = 0; i < numV * numV; i++) {
         fprintf(fp, " %d", spaths[i]);

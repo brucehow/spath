@@ -7,7 +7,7 @@
 # @date 03/10/2019
 
 PROGNAME = spath
-GCC = gcc-9 -std=c99 -pedantic -Wall -Werror
+GCC = mpicc -std=c99 -pedantic -Wall -Werror -fopenmp
 DEPENDENCIES = spath.c process.c memory.c dijkstra.c output.c
 
 all: $(DEPENDENCIES)
