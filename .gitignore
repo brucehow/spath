@@ -10,3 +10,6 @@ examples/
 
 # Mac OS
 *.DS_STORE
+
+# Testing files
+readbinary.c

@@ -4,7 +4,7 @@
 # Please view README.md for more info on its usage
 #
 # @author Bruce How (22242664)
-# @date 03/10/2019
+# @date 11/10/2019
 
 PROGNAME = spath
 GCC = mpicc -std=c99 -pedantic -Wall -Werror -fopenmp

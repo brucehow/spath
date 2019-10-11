@@ -1,7 +1,12 @@
-// The program will by default output results to an output file
-
 #include "spath.h"
 
+/**
+ * Produces a standard usage error output to stderr.
+ * There is an optional parameter to display an additional
+ * error message.
+ * 
+ * @param err The optional error message
+ */
 void usage(char *err) {
     char *usage = "\nusage: spath -f input.in\n";
     if (err != NULL) {
@@ -10,8 +15,18 @@ void usage(char *err) {
     printf("%s", usage);
 }
 
+/**
+ * Main function that checks that the user specified CLA are valid.
+ * Processes the graph and appropriately run the Dijkstra's algorithm
+ * using these variables with MPI. 
+ *
+ * @param argc The number of CLA
+ * @param argv The list of arguments
+ * @return int The exit type
+ */
 int main(int argc, char *argv[]) {
-    if (argc < 3) { // CLA processing
+     // CLA processing
+    if (argc < 3) {
         usage("invalid number of arguments supplied\n");
         exit(EXIT_FAILURE);
     }
@@ -20,20 +35,20 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    FILE *fp = fopen(argv[2], "rb"); // File checking
+    // File validation
+    FILE *fp = fopen(argv[2], "rb");
     if (fp == NULL) {
         fprintf(stderr, "%s: no such file\n", argv[2]);
 		exit(EXIT_FAILURE);
 	}
 
-    int *weights;
-    int numV;
-    int *spaths;
-    int nodes, offset = 0;
+    int *weights; // 1D array containing the list of weights
+    int numV; // Number of vertices/nodes
+    int *spaths; // Result variable
 
     // MPI initialisation
     MPI_Status status;
-    int numtasks, numworkers, taskid;
+    int numtasks, numworkers, taskid, nodes, offset = 0;
 
     if (MPI_Init(&argc, &argv) != 0) {
         fprintf(stderr, "error initialising MPI");
@@ -48,16 +63,13 @@ int main(int argc, char *argv[]) {
         process_graph(fp, &weights, &numV);
         spaths = allocate(numV * numV * sizeof(int));
 
+        // Variables for split work
         int avgV = numV / numworkers;
         int extra = numV % numworkers;
-
-        pint(avgV);
-        pint(extra);
-
+        
         // Send tasks to workers
         for (int dest = 1; dest <= numworkers; dest++) {
-            pint(dest);
-            nodes = avgV + (dest <= extra); // Split extra work
+            nodes = avgV + (dest <= extra); // Optimal way for workload split
             MPI_Send(&nodes, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&offset, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&numV, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
@@ -77,31 +89,27 @@ int main(int argc, char *argv[]) {
         FILE *fout = fopen(filename, "w");
         if (fout == NULL) {
             fprintf(stderr, "spath: failed to write to the output file\n");
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
             exit(EXIT_FAILURE);
         }
         output(fout, spaths, numV);
 
-        // Memory clearing
         fclose(fp);
         fclose(fout);
         free(spaths);
         free(weights);
         free(filename);
     } else {
-        // Receive work from MASTER
         MPI_Recv(&nodes, 1, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&offset, 1, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&numV, 1, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
         weights = allocate(numV * numV * sizeof(int));
         MPI_Recv(weights, numV * numV, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
 
-        printf("taskid=%d|numV=%d|offset=%d\n", taskid, numV, offset);
-
         spaths = allocate(numV * nodes * sizeof(int));
         for (int i = 0; i < nodes; i++) {
             dijkstra(offset/numV + i, weights, numV, i * numV, &spaths);
         }
-        // Send results to MASTER
         MPI_Send(&nodes, 1, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(&offset, 1, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(spaths, numV * nodes, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);

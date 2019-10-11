@@ -1,5 +1,13 @@
 #include "spath.h"
 
+/**
+ * Produces the output filename by extracting the input 
+ * filename (omitting any leading directories) and appending
+ * the appropriate file extension. 
+ *
+ * @param filename The input filename 
+ * @return char* The new output filename
+ */
 char *get_filename(char *filename) {
     // Strip directory slashes if any
     int index = 0;
@@ -21,10 +29,15 @@ char *get_filename(char *filename) {
     return result;
 }
 
+/**
+ * Output the results of a list of shortest paths in binary to a 
+ * specified file pointer. This is done using fwrite.
+ * 
+ * @param fp The file pointer to output the results to
+ * @param spaths The array of shortest paths
+ * @param numV The number of nodes
+ */
 void output(FILE *fp, int *spaths, int numV) {
-    fprintf(fp, "%d", numV);
-    for (int i = 0; i < numV * numV; i++) {
-        fprintf(fp, " %d", spaths[i]);
-    }
-    fprintf(fp, "\n");
+    fwrite(&numV, sizeof(int), 1, fp);
+    fwrite(spaths, sizeof(int), numV * numV, fp);
 }

@@ -1,5 +1,16 @@
 #include "spath.h"
 
+/**
+ * Runs the Dijkstra algorithm for a given node. The spaths resulting
+ * array is modified directly hence the double pointer parameter.
+ * To further speed up the process, OMP parralellism has been implemented.
+ * 
+ * @param node The node to calculate the shortest paths from
+ * @param weights The list of weights for all nodes to another
+ * @param numV The number of nodes
+ * @param offset The offset to store the results to for spaths
+ * @param spaths The shortest path variable to store the results to
+ */
 void dijkstra(int node, int *weights, int numV, int offset, int **spaths) {
     bool *spt =  allocate(numV * sizeof(bool)); // Keeps track if visitied
 
@@ -10,7 +21,10 @@ void dijkstra(int node, int *weights, int numV, int offset, int **spaths) {
     (*spaths)[node + offset] = 0;
     
     int current = node;
-    for (int i = 0; i < numV; i++) {
+    int i;
+
+    #pragma omp parallel for shared(spaths)
+    for (i = 0; i < numV; i++) {
         for (int j = 0; j < numV; j++) {
             // Exclude self distance and unconnected nodes
             int direct = weights[(numV * current) + j]; // Direct distance to node
