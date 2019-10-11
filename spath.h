@@ -14,8 +14,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <inttypes.h>
-#include <errno.h>
+#include <time.h>
 #include <omp.h>
 #include <mpi.h>
 
@@ -71,3 +70,11 @@ extern void output(FILE *fp, int *spaths, int numV);
  * @return char* The new output filename
  */
 extern char *get_filename(char *filename);
+
+/**
+ * Output the time taken to perform the the computation
+ * 
+ * @param start The starting timeval structure
+ * @param end The ending timeval structure
+ */
+extern void output_time(struct timeval start, struct timeval end);

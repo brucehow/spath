@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
     int *weights; // 1D array containing the list of weights
     int numV; // Number of vertices/nodes
     int *spaths; // Result variable
+    struct timeval start, end; // Timing variables
 
     // MPI initialisation
     MPI_Status status;
@@ -66,6 +67,9 @@ int main(int argc, char *argv[]) {
         // Variables for split work
         int avgV = numV / numworkers;
         int extra = numV % numworkers;
+
+        // Start the timer before Dijkstra computation
+        gettimeofday(&start, NULL); 
         
         // Send tasks to workers
         for (int dest = 1; dest <= numworkers; dest++) {
@@ -84,6 +88,8 @@ int main(int argc, char *argv[]) {
             MPI_Recv(&spaths[offset], numV * nodes, MPI_INT, source, FROM_WORKER, MPI_COMM_WORLD, &status);
         }
 
+        gettimeofday(&end, NULL);
+
         // Output
         char *filename = get_filename(argv[2]);
         FILE *fout = fopen(filename, "w");
@@ -93,6 +99,7 @@ int main(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
         output(fout, spaths, numV);
+        output_time(start, end);
 
         fclose(fp);
         fclose(fout);

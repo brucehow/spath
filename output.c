@@ -41,3 +41,14 @@ void output(FILE *fp, int *spaths, int numV) {
     fwrite(&numV, sizeof(int), 1, fp);
     fwrite(spaths, sizeof(int), numV * numV, fp);
 }
+
+/**
+ * Returns the difference between the start and end timevals
+ * 
+ * @param start The starting timeval structure
+ * @param end The ending timeval structure
+ */
+void output_time(struct timeval start, struct timeval end) {
+    int diff = ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
+    printf("Total computation time: %ds\n", diff)
+}
