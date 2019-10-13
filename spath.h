@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/time.h>
 #include <time.h>
 #include <omp.h>
 #include <mpi.h>

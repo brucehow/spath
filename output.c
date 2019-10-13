@@ -49,6 +49,6 @@ void output(FILE *fp, int *spaths, int numV) {
  * @param end The ending timeval structure
  */
 void output_time(struct timeval start, struct timeval end) {
-    int diff = ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
-    printf("Total computation time: %ds\n", diff)
+    float diff = ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
+    printf("Total computation time: %fs\n", diff);
 }
