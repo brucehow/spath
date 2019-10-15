@@ -1,48 +1,54 @@
 #include "spath.h"
 
 /**
- * Runs the Dijkstra algorithm for a given node. The spaths resulting
+ * Runs the Dijkstra algorithm for a set of nodes. The spaths resulting
  * array is modified directly hence the double pointer parameter.
  * To further speed up the process, OMP parralellism has been implemented.
  * 
- * @param node The node to calculate the shortest paths from
- * @param weights The list of weights for all nodes to another
- * @param numV The number of nodes
- * @param offset The offset to store the results to for spaths
  * @param spaths The shortest path variable to store the results to
+ * @param weights The list of weights from all nodes to another
+ * @param numV The nunber of nodes or vertices
+ * @param nodes The number of nodes to perform dijkstra's Algorithm for
+ * @param pos The offset positional value
  */
-void dijkstra(int node, int *weights, int numV, int offset, int **spaths) {
-    bool *spt =  allocate(numV * sizeof(bool)); // Keeps track if visitied
+void dijkstra(int **spaths, int *weights, int numV, int nodes, int pos) {
+    int i, j, k, current;
+    bool *spt = allocate(numV * sizeof(bool)); // Keeps track if visitied
 
-    for (int i = 0; i < numV; i++) {
-        (*spaths)[i + offset] = -1;
-        spt[i] = false;
-    }
-    (*spaths)[node + offset] = 0;
-    
-    int current = node;
-    int i;
+    for (i = 0; i < nodes; i++) {
+        int node = pos/numV + i;
+        int offset = i * numV;
 
-    #pragma omp parallel for shared(spaths)
-    for (i = 0; i < numV; i++) {
-        for (int j = 0; j < numV; j++) {
-            // Exclude self distance and unconnected nodes
-            int direct = weights[(numV * current) + j]; // Direct distance to node
-            if (j == current || direct == 0) {
-                continue;
-            }
-            int dist = (*spaths)[offset + current] + direct;
-            if ((*spaths)[offset + j] == -1 || dist < (*spaths)[offset + j]) {
-                (*spaths)[offset + j] = dist;
-            }
+        for (j = 0; j < numV; j++) {
+            (*spaths)[j + offset] = -1;
+            spt[j] = false;
         }
-        // Identify next node
-        spt[current] = true;
-        int lowest = -1;
-        for (int k = 0; k < numV; k++) {
-            if (!spt[k] && (*spaths)[offset + k] != -1 && (lowest == -1 || (*spaths)[offset + k] < lowest)) {
-                lowest = (*spaths)[offset + k];
-                current = k;
+        (*spaths)[offset + node] = 0;
+        
+        current = node;
+        
+        for (j = 0; j < numV; j++) {
+            for (k = 0; k < numV; k++) {
+                // Exclude self distance and unconnected nodes
+                int direct = weights[(numV * current) + k]; // Direct distance to node
+                if (k == current || direct == 0) {
+                    continue;
+                }
+                int dist = (*spaths)[offset + current] + direct;
+                if ((*spaths)[offset + k] == -1 || dist < (*spaths)[offset + k]) {
+                    (*spaths)[offset + k] = dist;
+                }
+            }
+            // State that we have visited the node
+            spt[current] = true;
+
+            // Identify next node
+            int lowest = -1;
+            for (k = 0; k < numV; k++) {
+                if (!spt[k] && (*spaths)[offset + k] != -1 && (lowest == -1 || (*spaths)[offset + k] < lowest)) {
+                    lowest = (*spaths)[offset + k];
+                    current = k;
+                }
             }
         }
     }

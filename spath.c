@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     
+    // Gets the number of tasks and the current taskid to determine master
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
     numworkers = numtasks - 1;
@@ -74,6 +75,7 @@ int main(int argc, char *argv[]) {
         // Send tasks to workers
         for (int dest = 1; dest <= numworkers; dest++) {
             nodes = avgV + (dest <= extra); // Optimal way for workload split
+            // Sends the appropriate variables to the workers
             MPI_Send(&nodes, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&offset, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&numV, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
@@ -114,9 +116,9 @@ int main(int argc, char *argv[]) {
         MPI_Recv(weights, numV * numV, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
 
         spaths = allocate(numV * nodes * sizeof(int));
-        for (int i = 0; i < nodes; i++) {
-            dijkstra(offset/numV + i, weights, numV, i * numV, &spaths);
-        }
+
+        dijkstra(&spaths, weights, numV, nodes, offset);
+
         MPI_Send(&nodes, 1, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(&offset, 1, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(spaths, numV * nodes, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);

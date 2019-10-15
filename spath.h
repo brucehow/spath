@@ -46,13 +46,13 @@ extern void *allocate(size_t size);
  * Perform Dijkstra's algorithm for calculating the shortest
  * paths from one node to the all other nodes.
  * 
- * @param node The node to calculate the shortest paths from
- * @param weights The list of weights for all nodes to another
- * @param numV The number of nodes
- * @param offset The offset to store the results to for spaths
  * @param spaths The shortest path variable to store the results to
+ * @param weights The list of weights from all nodes to another
+ * @param numV The nunber of nodes or vertices
+ * @param nodes The number of nodes to perform dijkstra's Algorithm for
+ * @param pos The offset positional value
  */
-extern void dijkstra(int node, int *weights, int numV, int offset, int **spaths);
+void dijkstra(int **spaths, int *weights, int numV, int nodes, int pos);
 
 /**
  * Output the results of a list of shortest paths in binary to a 
