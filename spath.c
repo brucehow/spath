@@ -1,3 +1,16 @@
+/**
+ * CITS3402: High Performance Computing Project 2
+ * Parallel algorithms to solve all pair shortest path
+ *
+ * Clarifications
+ * The program will automatically generate an ouput file.
+ * The ouput file will be in binary.
+ * The program requires the -f flag to specify the input file.
+ *
+ * @author Bruce How (22242664)
+ * @date 25/10/2019
+ */
+ 
 #include "spath.h"
 
 /**
@@ -51,6 +64,7 @@ int main(int argc, char *argv[]) {
     MPI_Status status;
     int numtasks, numworkers, taskid, nodes, offset = 0;
 
+    // MPI init should not return 0 if it was successful
     if (MPI_Init(&argc, &argv) != 0) {
         fprintf(stderr, "error initialising MPI");
         exit(EXIT_FAILURE);
@@ -59,13 +73,13 @@ int main(int argc, char *argv[]) {
     // Gets the number of tasks and the current taskid to determine master
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
-    numworkers = numtasks - 1;
+    numworkers = numtasks - 1; // Exclude master worker
 
     if (taskid == MASTER) {
-        process_graph(fp, &weights, &numV);
+        process_graph(fp, &weights, &numV); // Read the fp and store the values accordingly
         spaths = allocate(numV * numV * sizeof(int));
 
-        // Variables for split work
+        // Variables for workload balancing
         int avgV = numV / numworkers;
         int extra = numV % numworkers;
 
@@ -73,13 +87,16 @@ int main(int argc, char *argv[]) {
         gettimeofday(&start, NULL); 
         
         // Send tasks to workers
+        // Broadcast to all nodes variables that aren't node independant, O(logp)
+        MPI_Bcast(&numV, 1, MPI_INT, MASTER, MPI_COMM_WORLD); 
+        MPI_Bcast(weights, numV * numV, MPI_INT, MASTER, MPI_COMM_WORLD);
         for (int dest = 1; dest <= numworkers; dest++) {
-            nodes = avgV + (dest <= extra); // Optimal way for workload split
+             // Optimal way for workload split
+            nodes = avgV + (dest <= extra); // Sends extra tasks to earlier workers
+            
             // Sends the appropriate variables to the workers
             MPI_Send(&nodes, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&offset, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
-            MPI_Send(&numV, 1, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
-            MPI_Send(weights, numV * numV, MPI_INT, dest, FROM_MASTER, MPI_COMM_WORLD);
             offset += numV * nodes;
         }
 
@@ -92,7 +109,7 @@ int main(int argc, char *argv[]) {
 
         gettimeofday(&end, NULL);
 
-        // Output
+        // Output code
         char *filename = get_filename(argv[2]);
         FILE *fout = fopen(filename, "w");
         if (fout == NULL) {
@@ -100,6 +117,7 @@ int main(int argc, char *argv[]) {
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
             exit(EXIT_FAILURE);
         }
+        // Binary output write, unspecified in project
         output(fout, spaths, numV);
         output_time(start, end);
 
@@ -108,21 +126,23 @@ int main(int argc, char *argv[]) {
         free(spaths);
         free(weights);
         free(filename);
-    } else {
+    } else { // Worker code below
+        // Receives variables and work from master
+        MPI_Bcast(&numV, 1, MPI_INT, FROM_MASTER, MPI_COMM_WORLD);
+        weights = allocate(numV * numV * sizeof(int)); // Allocate memory before receiving weights data
+        MPI_Bcast(weights, numV * numV, MPI_INT, MASTER, MPI_COMM_WORLD);
+
         MPI_Recv(&nodes, 1, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&offset, 1, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
-        MPI_Recv(&numV, 1, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
-        weights = allocate(numV * numV * sizeof(int));
-        MPI_Recv(weights, numV * numV, MPI_INT, MASTER, FROM_MASTER, MPI_COMM_WORLD, &status);
-
-        spaths = allocate(numV * nodes * sizeof(int));
+        spaths = allocate(numV * nodes * sizeof(int)); // Allocate only the required task
 
         dijkstra(&spaths, weights, numV, nodes, offset);
 
+        // Sends finished work back to master
         MPI_Send(&nodes, 1, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(&offset, 1, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(spaths, numV * nodes, MPI_INT, MASTER, FROM_WORKER, MPI_COMM_WORLD);
     }
-    MPI_Finalize();
+    MPI_Finalize(); // Called by master thread that MPI initialised
     exit(EXIT_SUCCESS);
 }

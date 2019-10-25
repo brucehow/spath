@@ -4,10 +4,11 @@
  *
  * Clarifications
  * The program will automatically generate an ouput file.
- * The ouput file will, like the input file, be in binary.
+ * The ouput file will be in binary.
+ * The program requires the -f flag to specify the input file.
  *
  * @author Bruce How (22242664)
- * @date 11/10/2019
+ * @date 25/10/2019
  */
 
 #include <stdio.h>

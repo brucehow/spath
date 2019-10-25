@@ -1,3 +1,16 @@
+/**
+ * CITS3402: High Performance Computing Project 2
+ * Parallel algorithms to solve all pair shortest path
+ *
+ * Clarifications
+ * The program will automatically generate an ouput file.
+ * The ouput file will be in binary.
+ * The program requires the -f flag to specify the input file.
+ *
+ * @author Bruce How (22242664)
+ * @date 25/10/2019
+ */
+
 #include "spath.h"
 
 /**
@@ -14,8 +27,8 @@
 void dijkstra(int **spaths, int *weights, int numV, int nodes, int pos) {
     int i, j, k, current;
 
-    #pragma omp parallel shared(spaths,weights)
-    {
+    #pragma omp parallel shared(spaths)
+      {
         #pragma omp for private(i,j,k,current)
         for (i = 0; i < nodes; i++) {
             int node = pos/numV + i;
